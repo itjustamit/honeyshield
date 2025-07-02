@@ -109,7 +109,7 @@ pip install -r requirements.txt
 
 2. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/honeyshield.git
+git clone https://github.com/itjustamit/honeyshield.git
 cd honeyshield
 ```
 
@@ -157,7 +157,7 @@ pip install -r requirements.txt
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/honeyshield.git
+git clone https://github.com/itjustamit/honeyshield.git
 cd honeyshield
 ```
 
@@ -217,11 +217,11 @@ Method 2 - Using command line:
 ```bash
 # On Windows:
 venv\Scripts\activate
-python -m honeyshield.main
+python run.py
 
 # On Linux/Unix:
 source venv/bin/activate
-python -m honeyshield.main
+python run.py
 ```
 
 2. Access the web dashboard:
